@@ -1,4 +1,4 @@
-import { Message, Tool, googleaiModel, toolChoice } from '../../types';
+import { Message, Tool, googleaiModel, toolChoice } from '../../../types';
 import processMessages from './processMessages';
 
 const makeRequestConfig = ({

@@ -1,4 +1,4 @@
-import { Message } from '../../types';
+import { Message } from '../../../types';
 import { GAIMessage, GAIAssistantPart } from './types';
 
 const processMessages = (messages: Message[]) => {

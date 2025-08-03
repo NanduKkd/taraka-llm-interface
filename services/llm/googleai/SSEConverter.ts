@@ -1,5 +1,5 @@
 import SSEConverterParent from '../SSEConverterParent';
-import { messageEvent } from '../../types';
+import { messageEvent } from '../../../types';
 
 class SSEConverter extends SSEConverterParent {
   _transform({ data: str, event }: { data: string, event?: string }, controller: TransformStreamDefaultController<messageEvent>) {
@@ -21,7 +21,7 @@ class SSEConverter extends SSEConverterParent {
           }
           this.textContentBlockDelta(part.text, controller);
         } else if (part.functionCall) {
-          this.toolContentBlock(uuidv4(), part.functionCall.name, controller);
+          this.toolContentBlock(crypto.randomUUID(), part.functionCall.name, controller);
           this.toolContentBlockDelta(JSON.stringify(part.functionCall.args), controller, part.functionCall.args);
         }
         this.updateUsage({
