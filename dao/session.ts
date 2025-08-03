@@ -1,19 +1,18 @@
-import supabase from "../utils/supabase.ts";
+import { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 
-export async function listSessions(): Promise<{ created_at: Date; id: number; machine_id: string; os: string; path: string; title: string | null; user_id: string; }[]> {
-  const { data, error } = await supabase.from('sessions').select('*');
-  if (error)
+export async function getSession(supabase: SupabaseClient, session_id: number) {
+  const { data, error } = await supabase.from('sessions').select()
+    .eq('id', session_id)
+    .single();
+  if(error)
     throw error;
-  return data.map(i => ({...i, created_at: new Date(i.created_at)}));
+  return data;
 }
 
-export async function startSession(machine_id: string, os: string, path: string): Promise<{ created_at: Date; id: number; machine_id: string; os: string; path: string; title: string | null; user_id: string; }[]> {
-  const { data, error } = await supabase.from('sessions').insert({
-    machine_id,
-    os,
-    path
-  }).select();
+export async function updateSession(supabase: SupabaseClient, session_id: number, session_title: string) {
+  const { error } = await supabase.from('sessions').update({
+    title: session_title
+  }).eq('session_id', session_id);
   if (error)
     throw error;
-  return {...data, created_at: new Date(data.created_at)};
 }

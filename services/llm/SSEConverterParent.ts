@@ -1,4 +1,4 @@
-import { Message, model, contentBlock, messageEvent } from '../../types';
+import { Message, model, contentBlock, messageEvent } from '../../types/common.ts';
 
 interface ConvertedMessage extends Message {
   messageMetadata: any
