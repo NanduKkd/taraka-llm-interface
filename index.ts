@@ -3,9 +3,10 @@ import { ApiError } from './utils/errors.ts';
 
 Deno.serve(async(req) => {
   try {
-    const authToken = req.headers.get('Authorization');
-    if(!authToken)
+    const authHeader = req.headers.get('Authorization');
+    if(!authHeader)
       throw new ApiError('Unauthorised user', 401);
+    const authToken = authHeader.split(' ')[1];
     return new Response(await main(authToken, await req.json()), {
       status: 200,
       headers: { 'Content-Type': 'text/event-stream' },

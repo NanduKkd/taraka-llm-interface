@@ -12,11 +12,13 @@ export default async function main(authToken: string, {
   provider,
   model,
   messageContent,
+  isAnonymous,
 }: {
   session_id: number,
   provider: 'googleai',
   model: googleaiModel,
-  messageContent: UserContentBlock
+  messageContent: UserContentBlock,
+  isAnonymous?: boolean,
 }) {
     if(!session_id)
       throw new ApiError('session_id required', 400);
@@ -24,7 +26,7 @@ export default async function main(authToken: string, {
     const session = await getSession(supabase, session_id);
     if(!session)
       throw new ApiError("Session not found", 404);
-    const messages = await listMessages(supabase, session_id);
+    const messages = isAnonymous ? [] : await listMessages(supabase, session_id);
     const newMessage: UserMessage = {
       content: [messageContent],
       id: crypto.randomUUID(),
@@ -33,7 +35,8 @@ export default async function main(authToken: string, {
       role: 'user',
       modelInfo: { model, provider },
     }
-    await saveMessage(supabase, messageToRow(newMessage));
+    if(!isAnonymous)
+      await saveMessage(supabase, messageToRow(newMessage));
     const stream = await llm({
       provider,
       model,
@@ -46,7 +49,8 @@ export default async function main(authToken: string, {
     });
     const sseStream = stream.readable.pipeThrough(new SSECompiler())
     stream.promise.then(async(res) => {
-      await saveMessage(supabase, messageToRow(res));
+      if(!isAnonymous)
+        await saveMessage(supabase, messageToRow(res));
     }).catch(error => {
       console.error(error);
     });

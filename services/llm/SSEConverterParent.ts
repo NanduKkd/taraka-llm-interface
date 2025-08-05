@@ -91,7 +91,7 @@ class SSEConverterParent extends TransformStream<{data: string, event?: string},
     if (isStart) {
       controller.enqueue({ event: "message_start", data: {messageMetadata: this.messageMetadata} });
     }
-    this.crntContentBlock = data;
+    this.crntContentBlock = {...data};
     controller.enqueue({ event: "content_block_start", data });
   }
 
