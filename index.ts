@@ -6,7 +6,7 @@ Deno.serve(async(req) => {
     const authToken = req.headers.get('Authorization');
     if(!authToken)
       throw new ApiError('Unauthorised user', 401);
-    return new Response(await run(authToken, await req.json()), {
+    return new Response(await main(authToken, await req.json()), {
       status: 200,
       headers: { 'Content-Type': 'text/event-stream' },
     })
