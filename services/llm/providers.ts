@@ -1,4 +1,4 @@
-import googleai from './googleai';
+import googleai from './googleai/index.ts';
 
 const providers = {
   googleai,

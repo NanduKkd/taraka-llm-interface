@@ -1,6 +1,4 @@
-import createClient from './utils/supabase.ts';
-import { getSession } from './dao/session.ts';
-import { listMessages } from './dao/message.ts';
+import main from './main.ts';
 import { ApiError } from './utils/errors.ts';
 
 Deno.serve(async(req) => {
@@ -8,15 +6,10 @@ Deno.serve(async(req) => {
     const authToken = req.headers.get('Authorization');
     if(!authToken)
       throw new ApiError('Unauthorised user', 401);
-    const { session_id } = await req.json();
-    if(!session_id)
-      throw new ApiError('session_id required', 400);
-    const supabase = createClient(authToken);
-    const session = await getSession(supabase, session_id);
-    if(!session)
-      throw new ApiError("Session not found", 404);
-    const messages = await listMessages(supabase, session_id);
-    return new Response('Helllo');
+    return new Response(await run(authToken, await req.json()), {
+      status: 200,
+      headers: { 'Content-Type': 'text/event-stream' },
+    })
   } catch (error) {
     console.error(error);
     if(error instanceof ApiError)

@@ -1,8 +1,8 @@
-import SSEConverterParent from '../SSEConverterParent';
-import { messageEvent } from '../../../types';
+import SSEConverterParent from '../SSEConverterParent.ts';
+import { messageEvent } from '../../../types/common.ts';
 
 class SSEConverter extends SSEConverterParent {
-  _transform({ data: str, event }: { data: string, event?: string }, controller: TransformStreamDefaultController<messageEvent>) {
+  override _transform({ data: str }: { data: string, event?: string }, controller: TransformStreamDefaultController<messageEvent>) {
     try {
       const json = JSON.parse(str);
       const cand = json.candidates[0];
@@ -32,7 +32,11 @@ class SSEConverter extends SSEConverterParent {
         });
       }
     } catch (error) {
-      this.handleError(error, controller);
+      if(error instanceof Error)
+        this.handleError(error, controller);
+      else
+        this.handleError(new Error('Something went wrong'), controller);
+      return;
     }
   }
 }

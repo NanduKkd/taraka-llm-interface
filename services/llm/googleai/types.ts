@@ -8,12 +8,12 @@ export type GAIUserPart =
 
 export type GAIUserMessage = {
   role: 'user',
-  parts: UserPart
+  parts: GAIUserPart[]
 }
 
 export type GAIAssistantMessage = {
-  role: 'assistant',
-  parts: AssistantPart
+  role: 'model',
+  parts: GAIAssistantPart[]
 }
 
-export type GAIMessage = AssistantMessage | UserMessage;
+export type GAIMessage = GAIAssistantMessage | GAIUserMessage;

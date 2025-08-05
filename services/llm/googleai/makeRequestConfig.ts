@@ -1,5 +1,6 @@
-import { Message, Tool, googleaiModel, toolChoice } from '../../../types';
-import processMessages from './processMessages';
+import { Message, Tool, googleaiModel, toolChoice } from '../../../types/common.ts';
+import processMessages from './processMessages.ts';
+import { aiConstants } from '../../../config/constants.ts';
 
 const makeRequestConfig = ({
   model,
@@ -18,8 +19,9 @@ const makeRequestConfig = ({
   thinking: boolean,
   temperature?: number,
   toolChoice: toolChoice,
-}) => [
-  'https://generativelanguage.googleapis.com/v1beta/models/'+model+':'+(stream?'streamG':'g')+'enerateContent?alt=sse&key='+constants.googleai.apiKey,
+  systemInstruction: string,
+}): [string, RequestInit] => [
+  'https://generativelanguage.googleapis.com/v1beta/models/'+model+':'+(stream?'streamG':'g')+'enerateContent?alt=sse&key='+aiConstants.googleai.apiKey,
   {
     method: 'POST',
     body: JSON.stringify({

@@ -1,24 +1,34 @@
-import { Message, model, contentBlock, messageEvent } from '../../types/common.ts';
+import {
+  AssistantMessage, modelInfo, AssistantContentBlock,
+  ToolContentBlock, ThinkingContentBlock, TextContentBlock,
+  messageEvent, tokenUsage
+} from '../../types/common.ts';
 
-interface ConvertedMessage extends Message {
-  messageMetadata: any
+type MessageMetadata = {
+  id: string
+  session_id: number
+  created_at: Date
+  modelInfo: modelInfo
 }
 
-interface currentContentBlock extends contentBlock {
-  args: string | object
+type CurrentToolContentBlock = ToolContentBlock & {
+  stringArgs: string | undefined,
 }
+type CurrentContentBlock = CurrentToolContentBlock | ThinkingContentBlock | TextContentBlock;
 
-class SSEConverterParent extends TransformStream<string, messageEvent> {
-  contentOutput: contentBlock[] = [];
-  crntContentBlock?: currentContentBlock = null;
-  usageTokens = {};
-  message: Partial<ConvertedMessage> = {};
-  private onFulfilled?: (value: ConvertedMessage) => void;
+class SSEConverterParent extends TransformStream<{data: string, event?: string}, messageEvent> {
+  contentOutput: AssistantContentBlock[] = [];
+  crntContentBlock: CurrentContentBlock | null = null;
+  usageTokens: tokenUsage = {};
+  message: Partial<AssistantMessage> = {};
+  private onFulfilled?: (value: AssistantMessage) => void;
   private onRejected?: (reason: any) => void;
-  public readonly promise: Promise<ConvertedMessage>;
+  public readonly promise: Promise<AssistantMessage>;
+  private messageMetadata: MessageMetadata;
+  private error?: Error;
 
 
-  constructor(model: model, messageMetadata: any) {
+  constructor(messageMetadata: MessageMetadata) {
     super({
       transform: (chunk, controller) => {
         this._transform(chunk, controller);
@@ -31,12 +41,15 @@ class SSEConverterParent extends TransformStream<string, messageEvent> {
       this.onFulfilled = resolve;
       this.onRejected = reject;
     });
-    this.message.messageMetadata = messageMetadata;
-    this.model = model;
+    this.messageMetadata = messageMetadata;
   }
 
-  _transform(chunk: string, controller: TransformStreamDefaultController<messageEvent>) {
-    controller.error(new Error('_transform not implemented'));
+  throwError(error: Error, controller?: TransformStreamDefaultController<messageEvent>) {
+    if(controller) controller.error(error);
+    this.error = error;
+  }
+  _transform(_: { data: string, event?: string }, controller: TransformStreamDefaultController<messageEvent>) {
+    this.throwError(new Error('_transform not implemented'), controller);
   }
 
   _flush(controller: TransformStreamDefaultController<messageEvent>) {
@@ -46,19 +59,25 @@ class SSEConverterParent extends TransformStream<string, messageEvent> {
       this.endContentBlock(controller);
       controller.enqueue({ event: 'message_end', data: {} });
       this.onFulfilled?.({
-        ...this.message,
-        contentOutput: this.contentOutput,
-        usageTokens: this.usageTokens,
-        model: this.model,
+        // ...this.message,
+        content: this.contentOutput,
+        token_usage: this.usageTokens,
+        modelInfo: this.messageMetadata.modelInfo,
+        id: this.messageMetadata.id,
+        session_id: this.messageMetadata.session_id,
+        created_at: this.messageMetadata.created_at,
+        role: 'assistant',
       });
     }
   }
 
   endContentBlock(controller: TransformStreamDefaultController<messageEvent>) {
     if (this.crntContentBlock) {
-      const toSaveData = { ...this.crntContentBlock };
-      if (toSaveData.type === 'tool' && typeof toSaveData.args === 'string') {
-        toSaveData.args = JSON.parse(toSaveData.args);
+      let toSaveData: AssistantContentBlock | undefined;
+      if(this.crntContentBlock.type==='tool' && this.crntContentBlock.stringArgs) {
+        toSaveData = {...this.crntContentBlock, args: JSON.parse(this.crntContentBlock.stringArgs)};
+      } else {
+        toSaveData = this.crntContentBlock;
       }
       this.contentOutput.push(toSaveData);
       this.crntContentBlock = null;
@@ -66,25 +85,28 @@ class SSEConverterParent extends TransformStream<string, messageEvent> {
     }
   }
 
-  startContentBlock(data: contentBlock, controller: TransformStreamDefaultController<messageEvent>) {
-    let isStart = !this.crntContentBlock;
+  startContentBlock(data: CurrentContentBlock, controller: TransformStreamDefaultController<messageEvent>) {
+    const isStart = !this.crntContentBlock;
     this.endContentBlock(controller);
     if (isStart) {
-      controller.enqueue({ event: "message_start", data: this.message });
+      controller.enqueue({ event: "message_start", data: {messageMetadata: this.messageMetadata} });
     }
     this.crntContentBlock = data;
     controller.enqueue({ event: "content_block_start", data });
   }
 
   toolContentBlock(toolCallId: string, name: string, controller: TransformStreamDefaultController<messageEvent>) {
-    this.startContentBlock({ type: 'tool', toolCallId, name, args: '' }, controller);
+    this.startContentBlock({ type: 'tool', toolCallId, name, args: {}, stringArgs: '' }, controller);
   }
 
   toolContentBlockDelta(partialJson: string, controller: TransformStreamDefaultController<messageEvent>, object?: object) {
+    if(this.crntContentBlock?.type!=='tool') {
+      return this.throwError(new Error("Tool content block delta but crnt block is "+this.crntContentBlock?.type));
+    }
     if (object) {
       this.crntContentBlock.args = object;
     } else {
-      this.crntContentBlock.args += partialJson;
+      this.crntContentBlock.stringArgs += partialJson;
     }
     controller.enqueue({ event: "content_block_delta", data: { type: 'tool', delta: partialJson } });
   }
@@ -94,6 +116,9 @@ class SSEConverterParent extends TransformStream<string, messageEvent> {
   }
 
   textContentBlockDelta(txt: string, controller: TransformStreamDefaultController<messageEvent>) {
+    if(this.crntContentBlock?.type!=='text') {
+      return this.throwError(new Error("Text content block delta but crnt block is "+this.crntContentBlock?.type));
+    }
     this.crntContentBlock.text += txt;
     controller.enqueue({ event: "content_block_delta", data: { type: 'text', delta: txt } });
   }
@@ -103,6 +128,9 @@ class SSEConverterParent extends TransformStream<string, messageEvent> {
   }
 
   thinkingContentBlockDelta({ thinking, signature }: { thinking?: string, signature?: string }, controller: TransformStreamDefaultController<messageEvent>) {
+    if(this.crntContentBlock?.type!=='thinking') {
+      return this.throwError(new Error("Thinking content block delta but crnt block is "+this.crntContentBlock?.type));
+    }
     if (thinking) {
       this.crntContentBlock.thinking += thinking;
       controller.enqueue({ event: 'content_block_delta', data: { type: 'thinking', delta: thinking } });
@@ -127,7 +155,8 @@ class SSEConverterParent extends TransformStream<string, messageEvent> {
 
   handleError(error: Error, controller: TransformStreamDefaultController<messageEvent>) {
     this.error = error;
-    controller.enqueue({ event: 'error', data: { message: error.message, type: error.type } });
+    console.error(error);
+    controller.enqueue({ event: 'error', data: { message: error.message } });
     controller.terminate();
   }
 }
