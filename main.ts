@@ -3,23 +3,27 @@ import { getSession } from './dao/session.ts';
 import { listMessages, saveMessage } from './dao/message.ts';
 import { ApiError } from './utils/errors.ts';
 import llm from './services/llm/index.ts';
-import { googleaiModel, UserContentBlock, UserMessage } from './types/common.ts';
+import { googleaiModel, UserContentBlock, ToolResultContentBlock, UserMessage, ToolResponse } from './types/common.ts';
 import SSECompiler from './utils/SSECompiler.ts';
 import { messageToRow, rowToMessage } from './utils/messageRow.ts';
 
+export default function main(authToken: string, obj: { id: string, session_id: number, provider: 'googleai', model: googleaiModel, messageContent: UserContentBlock[] | ToolResultContentBlock[] }): Promise<ReadableStream<Uint8Array<ArrayBufferLike>>>
+export default function main(authToken: string, obj: { session_id: number, provider: 'googleai', model: googleaiModel, messageContent: UserContentBlock[] | ToolResultContentBlock[], isAnynymous: true }): Promise<ReadableStream<Uint8Array<ArrayBufferLike>>>
 export default async function main(authToken: string, {
+  id,
   session_id,
   provider,
   model,
   messageContent,
   isAnonymous,
 }: {
+  id?: string,
   session_id: number,
   provider: 'googleai',
   model: googleaiModel,
-  messageContent: UserContentBlock,
+  messageContent: UserContentBlock[] | ToolResultContentBlock[],
   isAnonymous?: boolean,
-}) {
+}): Promise<ReadableStream<Uint8Array<ArrayBufferLike>>> {
     if(!session_id)
       throw new ApiError('session_id required', 400);
     const supabase = createClient(authToken);
@@ -27,14 +31,15 @@ export default async function main(authToken: string, {
     if(!session)
       throw new ApiError("Session not found", 404);
     const messages = isAnonymous ? [] : await listMessages(supabase, session_id);
-    const newMessage: UserMessage = {
-      content: [messageContent],
-      id: crypto.randomUUID(),
+    const role = messageContent[0]?.type!=='tool_result' ? 'user' : 'tool';
+    const newMessage: UserMessage | ToolResponse = {
+      content: role==='user' ? messageContent.filter(i => i.type==='text') : messageContent.filter(i => i.type==='tool_result'),
+      id: id || crypto.randomUUID(),
       session_id,
       created_at: new Date(),
-      role: 'user',
+      role,
       modelInfo: { model, provider },
-    }
+    } as UserMessage | ToolResponse;
     if(!isAnonymous)
       await saveMessage(supabase, messageToRow(newMessage));
     const stream = await llm({

@@ -1,5 +1,3 @@
-import { Json } from './supabase.ts';
-
 export interface Session {
   id: number,
   machine_id: string,
@@ -107,10 +105,16 @@ export interface ToolResponse {
 }
 export type Message = UserMessage | AssistantMessage | ToolResponse;
 
+export type MessageMetadata = {
+  id: string
+  session_id: number
+  created_at: Date
+  modelInfo: modelInfo
+}
 
 type startMessageEvent = {
   event: 'message_start'
-  data: {messageMetadata: any},
+  data: {messageMetadata: MessageMetadata},
 }
 type startContentBlockEvent = {
   event: 'content_block_start',

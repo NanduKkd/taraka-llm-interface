@@ -1,15 +1,8 @@
 import {
-  AssistantMessage, modelInfo, AssistantContentBlock,
+  AssistantMessage, AssistantContentBlock,
   ToolContentBlock, ThinkingContentBlock, TextContentBlock,
-  messageEvent, tokenUsage
+  messageEvent, tokenUsage, MessageMetadata
 } from '../../types/common.ts';
-
-type MessageMetadata = {
-  id: string
-  session_id: number
-  created_at: Date
-  modelInfo: modelInfo
-}
 
 type CurrentToolContentBlock = ToolContentBlock & {
   stringArgs: string | undefined,
