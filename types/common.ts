@@ -17,6 +17,8 @@ type ObjectSchema = {
   required: string[],
 }
 
+export type responseSchema = ValueSchema | ObjectSchema;
+
 export interface Tool {
   name: string,
   description: string,

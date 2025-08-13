@@ -16,7 +16,7 @@ class SSEConverterParent extends TransformStream<{data: string, event?: string},
   message: Partial<AssistantMessage> = {};
   private onFulfilled?: (value: AssistantMessage) => void;
   private onRejected?: (reason: any) => void;
-  public readonly promise: Promise<AssistantMessage>;
+  public readonly _promise: Promise<AssistantMessage>;
   private messageMetadata: MessageMetadata;
   private error?: Error;
 
@@ -30,11 +30,15 @@ class SSEConverterParent extends TransformStream<{data: string, event?: string},
         this._flush(controller);
       }
     });
-    this.promise = new Promise((resolve, reject) => {
+    this._promise = new Promise((resolve, reject) => {
       this.onFulfilled = resolve;
       this.onRejected = reject;
     });
     this.messageMetadata = messageMetadata;
+  }
+
+  get promise() {
+    return this._promise;
   }
 
   throwError(error: Error, controller?: TransformStreamDefaultController<messageEvent>) {

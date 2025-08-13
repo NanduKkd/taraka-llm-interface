@@ -6,6 +6,7 @@ import llm from './services/llm/index.ts';
 import { googleaiModel, UserContentBlock, ToolResultContentBlock, UserMessage, ToolResponse } from './types/common.ts';
 import SSECompiler from './utils/SSECompiler.ts';
 import { messageToRow, rowToMessage } from './utils/messageRow.ts';
+import tools from './config/schema.json' with { type: 'json' };
 
 export default function main(authToken: string, obj: { id: string, session_id: number, provider: 'googleai', model: googleaiModel, messageContent: UserContentBlock[] | ToolResultContentBlock[] }): Promise<ReadableStream<Uint8Array<ArrayBufferLike>>>
 export default function main(authToken: string, obj: { session_id: number, provider: 'googleai', model: googleaiModel, messageContent: UserContentBlock[] | ToolResultContentBlock[], isAnynymous: true }): Promise<ReadableStream<Uint8Array<ArrayBufferLike>>>
@@ -46,8 +47,8 @@ export default async function main(authToken: string, {
       provider,
       model,
       messages: [...messages.map(rowToMessage), newMessage],
-      systemInstruction: "You are a helpful assistant",
-      tools: [],
+      systemInstruction: "You are a powerful code implementer named Taraka. Taraka is a Sanskrit word. Use the tools and do your thing. The user uses os '"+session.os+"' and current workspace is at path '"+session.path+"'. Now get to work",
+      tools: tools as any,
       toolChoice: 'auto',
       thinking: false,
       session_id: session.id

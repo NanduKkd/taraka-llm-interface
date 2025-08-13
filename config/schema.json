@@ -1,0 +1,92 @@
+[
+  {
+    "name": "list_dir",
+    "description": "Lists files and directories in a given path.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "folderPath": {
+          "type": "string",
+          "description": "The path to the folder to list."
+        },
+        "search": {
+          "type": "string",
+          "description": "A search string to filter the results."
+        }
+      },
+      "required": ["folderPath"]
+    }
+  },
+  {
+    "name": "read_file",
+    "description": "Reads the content of a file.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "The path to the file to read."
+        },
+        "startLineInclusive": {
+          "type": "number",
+          "description": "The line number to start reading from (inclusive)."
+        },
+        "endLineExclusive": {
+          "type": "number",
+          "description": "The line number to stop reading at (exclusive)."
+        }
+      },
+      "required": ["path"]
+    }
+  },
+  {
+    "name": "write_file",
+    "description": "Use this tool to propose an edit to an existing file (or create a new one).\nThis will be read by a less intelligent model, which will quickly apply the edit. You should make it clear what the edit is, while also minimizing the unchanged code you write.\nWhen writing the edit, you should specify each edit in sequence, with the special comment `// ... existing code ...` to represent unchanged code in between edited lines.\nFor example:\n```\n// ... existing code ...\nFIRST_EDIT\n// ... existing code ...\nSECOND_EDIT\n// ... existing code ...\nTHIRD_EDIT\n// ... existing code ...\n```\nYou should bias towards repeating as few lines of the original file as possible to convey the change.\nBut, each edit should contain sufficient context of unchanged lines around the code you're editing to resolve ambiguity.\nDO NOT omit spans of pre-existing code without using the `// ... existing code ...` comment to indicate its absence.\nMake sure it is clear what the edit should be",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "filePath": {
+          "type": "string",
+          "description": "The path to the file to write to."
+        },
+        "content": {
+          "type": "string",
+          "description": "Specify ONLY the precise lines of code that you wish to edit. **NEVER specify or write out unchanged code**. Instead, represent all unchanged code using the comment of the language you're editing in - example: `// ... existing code ...`"
+        }
+      },
+      "required": ["filePath", "content"]
+    }
+  },
+  {
+    "name": "grep_search",
+    "description": "Searches for a string in a directory.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "dirPath": {
+          "type": "string",
+          "description": "The path to the directory to search in."
+        },
+        "search": {
+          "type": "string",
+          "description": "The string to search for."
+        }
+      },
+      "required": ["dirPath", "search"]
+    }
+  },
+  {
+    "name": "run_terminal_command",
+    "description": "Runs a command in the terminal.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "The command to run."
+        }
+      },
+      "required": ["command"]
+    }
+  }
+]

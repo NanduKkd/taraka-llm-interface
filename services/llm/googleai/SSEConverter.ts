@@ -9,6 +9,14 @@ class SSEConverter extends SSEConverterParent {
       if (cand.index !== 0) {
         return;
       }
+      if(!cand.content?.parts) {
+        if(cand.finishReason==='STOP') {
+          throw new Error('Invalid response from AI, please try again');
+        }
+        console.log(cand);
+        console.error('no content parts in candidate');
+        return;
+      }
       for (const part of cand.content.parts) {
         if (part.thought) {
           if (this.crntBlockType !== 'thinking') {

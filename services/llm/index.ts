@@ -1,4 +1,4 @@
-import { googleaiModel, Message, Tool, toolChoice } from '../../types/common.ts';
+import { googleaiModel, Message, Tool, toolChoice, responseSchema } from '../../types/common.ts';
 import SSEParser from './SSEParser.ts';
 import SSEConverterParent from './SSEConverterParent.ts';
 import providers from './providers.ts';
@@ -14,6 +14,7 @@ async function llm({
   thinking=false,
   systemInstruction,
   session_id,
+  responseSchema,
 }: {
   provider: 'googleai',
   model: googleaiModel,
@@ -24,6 +25,7 @@ async function llm({
   temperature?: number,
   systemInstruction: string,
   session_id: number,
+  responseSchema?: responseSchema,
 }): Promise<SSEConverterParent> {
   const providerObj = providers[provider];
   const res = await fetch(...providerObj.makeRequestConfig({
@@ -35,6 +37,7 @@ async function llm({
     temperature,
     toolChoice,
     stream: true,
+    responseSchema,
   }));
   const converted = new providerObj.SSEConverter({
     id: crypto.randomUUID(), session_id,
