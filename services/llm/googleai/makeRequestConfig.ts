@@ -25,19 +25,19 @@ const makeRequestConfig = ({
 }): [string, RequestInit] => {
   const requestBody: Record<string, any> = {
     contents: processMessages(messages, !thinking),
-    tools: {functionDeclarations: tools.map(i => ({
+    tools: tools.length ? {functionDeclarations: tools.map(i => ({
       name: i.name,
       description: i.description,
       parametersJsonSchema: i.parameters
-    }))},
+    }))} : undefined,
     systemInstruction: {parts: [{
       text: systemInstruction,
     }]},
-    toolConfig: {
+    toolConfig: tools.length ? {
       functionCallingConfig: {
         mode: toolChoice.toUpperCase(),
       }
-    },
+    } : undefined,
     generationConfig: {
       thinkingConfig: {
         includeThoughts: thinking,
