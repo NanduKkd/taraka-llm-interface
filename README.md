@@ -1,1 +1,3 @@
-# taraka-llm-interface
+# This is a Tic-Tac-Toe game
+
+Enjoy!

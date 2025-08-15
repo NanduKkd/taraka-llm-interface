@@ -5,7 +5,7 @@
     "parameters": {
       "type": "object",
       "properties": {
-        "folderPath": {
+        "dirPath": {
           "type": "string",
           "description": "The path to the folder to list."
         },
@@ -14,7 +14,7 @@
           "description": "A search string to filter the results."
         }
       },
-      "required": ["folderPath"]
+      "required": ["dirPath"]
     }
   },
   {
@@ -23,7 +23,7 @@
     "parameters": {
       "type": "object",
       "properties": {
-        "path": {
+        "filePath": {
           "type": "string",
           "description": "The path to the file to read."
         },
@@ -36,7 +36,7 @@
           "description": "The line number to stop reading at (exclusive)."
         }
       },
-      "required": ["path"]
+      "required": ["filePath"]
     }
   },
   {
